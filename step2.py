@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import time
 import logging
+import os
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -59,8 +60,9 @@ def get_debt_and_earnings(ticker, cik):
         return None, None
 
 def main():
-    # Load tickers
-    df = pd.read_csv('qualifying_stocks.csv')
+    # Load tickers from the Excel file
+    file_path = os.path.join('Results', '2022.xlsx')
+    df = pd.read_excel(file_path, sheet_name='Qualifying_Stocks')
     tickers = df['Ticker'].str.upper().tolist()
     
     # Get CIK mapping
@@ -84,17 +86,19 @@ def main():
                 'Ticker': ticker,
                 'LongTermDebt_2022': debt,
                 'NetIncome_2022': income,
+                'DebtToEarnings_Ratio': debt_to_earnings,
                 'FiscalYear': 2022
             })
             logging.info(f"{ticker} meets criterion: Debt/Income = {debt_to_earnings:.2f}")
         
         time.sleep(0.2)  # Respect SEC rate limits
     
-    # Save results
+    # Save results to the Excel file
     if results:
         result_df = pd.DataFrame(results)
-        result_df.to_csv('debt_filtered_stocks_2022.csv', index=False)
-        logging.info(f"Saved {len(results)} tickers to debt_filtered_stocks_2022.csv")
+        with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+            result_df.to_excel(writer, sheet_name='Debt_Filtered_Stocks', index=False)
+        logging.info(f"Saved {len(results)} tickers to '{file_path}' in 'Debt_Filtered_Stocks' worksheet")
     else:
         logging.info("No tickers met the criterion")
 

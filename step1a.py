@@ -204,8 +204,13 @@ def main():
     }
     summary_df = pd.DataFrame(summary_data)
     
-    # Save to Excel
-    excel_filename = 'US_Stocks_EPS_2013_2022.xlsx'
+    # Create Results folder if it doesn't exist
+    results_folder = 'Results'
+    if not os.path.exists(results_folder):
+        os.makedirs(results_folder)
+    
+    # Save to Excel in Results folder
+    excel_filename = os.path.join(results_folder, '2022.xlsx')
     with pd.ExcelWriter(excel_filename, engine='openpyxl') as writer:
         results_df.to_excel(writer, sheet_name='All_Stocks_EPS', index=False)
         summary_df.to_excel(writer, sheet_name='Summary', index=False)

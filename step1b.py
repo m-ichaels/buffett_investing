@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 
 # Loading and cleaning the data
 def load_and_clean_data(file_path):
@@ -48,8 +49,8 @@ def screen_stocks(df):
     return pd.DataFrame(qualifying_stocks)
 
 def main():
-    # Specify the path to the Excel file
-    file_path = 'US_Stocks_EPS_2013_2022.xlsx'
+    # Specify the path to the Excel file in Results folder
+    file_path = os.path.join('Results', '2022.xlsx')
     
     # Load and clean data
     df = load_and_clean_data(file_path)
@@ -64,9 +65,11 @@ def main():
     else:
         print("No stocks meet all the specified criteria.")
     
-    # Save results to CSV
-    result_df.to_csv('qualifying_stocks.csv', index=False)
-    print("\nResults saved to 'qualifying_stocks.csv'")
+    # Append results to the existing Excel file
+    with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        result_df.to_excel(writer, sheet_name='Qualifying_Stocks', index=False)
+    
+    print(f"\nResults saved to '{file_path}' in 'Qualifying_Stocks' worksheet")
 
 if __name__ == "__main__":
     main()

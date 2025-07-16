@@ -6,8 +6,8 @@ from step2 import filter_debt_to_earnings
 from step3 import filter_roe
 from step4 import filter_rotc
 from step5 import filter_fcf
-from step6 import filter_rore
-from step7 import filter_earnings_yield
+from old_code.step6 import filter_rore
+from old_code.step7 import filter_earnings_yield
 
 def main():
     # Configurable parameters

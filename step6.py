@@ -1,6 +1,7 @@
 import pandas as pd
 import requests
 import time
+import os
 from statistics import mean
 
 USER_AGENT = 'Michael maverick575757@gmail.com'  # Replace with your contact info for SEC EDGAR API
@@ -123,18 +124,18 @@ def analyze_rore_trend(rore_values, years):
     }
 
 def main():
-    # Load tickers from the FCF filtered results
-    input_file = 'fcf_filtered_stocks.csv'
+    # Load tickers from the FCF filtered results in the Excel file
+    file_path = os.path.join('Results', '2022.xlsx')
     try:
-        df = pd.read_csv(input_file)
+        df = pd.read_excel(file_path, sheet_name='FCF_Filtered_Stocks')
         if 'Ticker' not in df.columns:
-            raise ValueError("Input CSV must contain a 'Ticker' column")
+            raise ValueError("FCF_Filtered_Stocks worksheet must contain a 'Ticker' column")
         tickers = df['Ticker'].tolist()
     except FileNotFoundError:
-        print(f"Error: {input_file} not found.")
+        print(f"Error: {file_path} not found.")
         return
     except Exception as e:
-        print(f"Error reading {input_file}: {e}")
+        print(f"Error reading {file_path}: {e}")
         return
 
     cik_mapping = get_cik_mapping()
@@ -293,10 +294,12 @@ def main():
         
         results_df = results_df[basic_cols + rore_cols + ni_cols + re_cols]
         
-        output_file = 'rore_filtered_stocks.csv'
-        results_df.to_csv(output_file, index=False)
+        # Save to Excel file as new worksheet
+        with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+            results_df.to_excel(writer, sheet_name='RORE_Filtered_Stocks', index=False)
+        
         print(f"\nRORE filtering complete! {len(results)} stocks meet the 12% criterion.")
-        print(f"Results saved to {output_file}")
+        print(f"Results saved to '{file_path}' in 'RORE_Filtered_Stocks' worksheet")
         
         # Print summary
         print("\nSummary of qualifying stocks:")

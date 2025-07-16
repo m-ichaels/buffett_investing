@@ -5,6 +5,7 @@ import yfinance as yf
 from statistics import mean, median
 import numpy as np
 from math import pow
+import os
 
 USER_AGENT = 'Michael maverick575757@gmail.com'  # Replace with your contact info for SEC EDGAR API
 
@@ -278,18 +279,18 @@ def calculate_eps_projected_return(ticker, current_price, eps_data, pe_data,
     }
 
 def main():
-    # Load tickers from the ROE projection filtered results
-    input_file = 'roe_projection_filtered_stocks.csv'
+    # Load tickers from the earnings yield filtered results in the Excel file (same as step8)
+    file_path = os.path.join('Results', '2022.xlsx')
     try:
-        df = pd.read_csv(input_file)
+        df = pd.read_excel(file_path, sheet_name='Earnings_Yield_Filtered_Stocks')
         if 'Ticker' not in df.columns:
-            raise ValueError("Input CSV must contain a 'Ticker' column")
+            raise ValueError("Earnings_Yield_Filtered_Stocks worksheet must contain a 'Ticker' column")
         tickers = df['Ticker'].tolist()
     except FileNotFoundError:
-        print(f"Error: {input_file} not found.")
+        print(f"Error: {file_path} not found.")
         return
     except Exception as e:
-        print(f"Error reading {input_file}: {e}")
+        print(f"Error reading {file_path}: {e}")
         return
 
     cik_mapping = get_cik_mapping()
@@ -449,10 +450,12 @@ def main():
         # Sort by annualized return (highest first)
         results_df = results_df.sort_values('Annualized_Return', ascending=False)
         
-        output_file = 'eps_growth_filtered_stocks.csv'
-        results_df.to_csv(output_file, index=False)
+        # Save to Excel file as new worksheet
+        with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+            results_df.to_excel(writer, sheet_name='EPS_Growth_Filtered_Stocks', index=False)
+        
         print(f"\nEPS Growth Method filtering complete! {len(results)} stocks meet the criteria.")
-        print(f"Results saved to {output_file}")
+        print(f"Results saved to '{file_path}' in 'EPS_Growth_Filtered_Stocks' worksheet")
         
         # Count by performance level
         excellent_count = sum(results_df['Meets_15_Percent'])
@@ -481,19 +484,11 @@ def main():
         print(f"- Average EPS growth rate: {results_df['Projected_Growth_Rate'].mean():.1%}")
         print(f"- Average future P/E: {results_df['Future_PE'].mean():.1f}")
         
-        # Compare with original ROE method results
-        print(f"\nMethodology comparison:")
-        print(f"- ROE Method: {len(df)} stocks qualified")
-        print(f"- EPS Growth Method: {len(results_df)} stocks qualified")
-        
-        # Show overlap
-        original_tickers = set(df['Ticker'].tolist())
-        new_tickers = set(results_df['Ticker'].tolist())
-        overlap = original_tickers.intersection(new_tickers)
-        
-        print(f"- Stocks that qualify under both methods: {len(overlap)}")
-        if overlap:
-            print(f"  {', '.join(sorted(overlap))}")
+        # Show input source info
+        print(f"\nInput source:")
+        print(f"- Using tickers from step7 output: 'Earnings_Yield_Filtered_Stocks'")
+        print(f"- Starting with {len(tickers)} tickers that beat Treasury yield")
+        print(f"- EPS Growth Method qualified: {len(results_df)} stocks")
         
     else:
         print("No stocks meet the minimum 12% projected return criteria using EPS Growth Method.")

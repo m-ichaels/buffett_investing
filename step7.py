@@ -4,6 +4,7 @@ import time
 import yfinance as yf
 from datetime import datetime, timedelta
 import numpy as np
+import os
 
 USER_AGENT = 'Michael maverick575757@gmail.com'  # Replace with your contact info for SEC EDGAR API
 
@@ -190,18 +191,18 @@ def calculate_earnings_yield(eps, stock_price):
     return eps / stock_price
 
 def main():
-    # Load tickers from the RORE filtered results
-    input_file = 'rore_filtered_stocks.csv'
+    # Load tickers from the RORE filtered results in the Excel file
+    file_path = os.path.join('Results', '2022.xlsx')
     try:
-        df = pd.read_csv(input_file)
+        df = pd.read_excel(file_path, sheet_name='RORE_Filtered_Stocks')
         if 'Ticker' not in df.columns:
-            raise ValueError("Input CSV must contain a 'Ticker' column")
+            raise ValueError("RORE_Filtered_Stocks worksheet must contain a 'Ticker' column")
         tickers = df['Ticker'].tolist()
     except FileNotFoundError:
-        print(f"Error: {input_file} not found.")
+        print(f"Error: {file_path} not found.")
         return
     except Exception as e:
-        print(f"Error reading {input_file}: {e}")
+        print(f"Error reading {file_path}: {e}")
         return
 
     # Get 10-year Treasury yield for December 2022
@@ -308,10 +309,12 @@ def main():
         # Sort by earnings yield (highest first)
         results_df = results_df.sort_values('Earnings_Yield', ascending=False)
         
-        output_file = 'earnings_yield_filtered_stocks.csv'
-        results_df.to_csv(output_file, index=False)
+        # Save to Excel file as new worksheet
+        with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+            results_df.to_excel(writer, sheet_name='Earnings_Yield_Filtered_Stocks', index=False)
+        
         print(f"\nEarnings yield filtering complete! {len(results)} stocks beat the Treasury yield.")
-        print(f"Results saved to {output_file}")
+        print(f"Results saved to '{file_path}' in 'Earnings_Yield_Filtered_Stocks' worksheet")
         
         # Print summary
         print("\nSummary of qualifying stocks (sorted by earnings yield):")
@@ -336,8 +339,8 @@ def main():
         # Show top performers
         top_3 = results_df.head(3)
         print(f"\nTop 3 performers by earnings yield:")
-        for _, row in top_3.iterrows():
-            print(f"1. {row['Ticker']}: {row['Earnings_Yield']:.2%}")
+        for i, (_, row) in enumerate(top_3.iterrows(), 1):
+            print(f"{i}. {row['Ticker']}: {row['Earnings_Yield']:.2%}")
         
     else:
         print("No stocks beat the 10-year Treasury yield.")
