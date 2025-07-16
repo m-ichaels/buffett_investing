@@ -4,16 +4,6 @@ import time
 import os
 from datetime import datetime
 import json  # For JSONDecodeError
-import sys
-
-def get_target_year():
-    """Get the target year from config.py"""
-    try:
-        import config
-        return config.TARGET_YEAR
-    except (ImportError, AttributeError):
-        print("Warning: Could not read year from config.py, defaulting to 2022")
-        return 2022
 
 # Define User-Agent string (replace with your name and email if necessary)
 USER_AGENT = 'Michael maverick575757@gmail.com'
@@ -40,7 +30,7 @@ def get_cik_mapping():
         cik_mapping[ticker] = cik
     return cik_mapping
 
-def get_eps_data(tickers, years):
+def get_eps_data(tickers, years=range(2013, 2023)):
     """Fetch diluted EPS data for given tickers from SEC EDGAR across specified years."""
     results = []
     total_tickers = len(tickers)
@@ -135,17 +125,6 @@ def get_eps_data(tickers, years):
     return results
 
 def main():
-    # Get the target year from main.py
-    target_year = get_target_year()
-    
-    # Calculate the year range (10 years ending with target_year)
-    start_year = target_year - 9  # 10 years total
-    end_year = target_year + 1    # +1 because range() is exclusive
-    years = range(start_year, end_year)
-    
-    print(f"Target year: {target_year}")
-    print(f"Processing EPS data for years: {start_year}-{target_year}")
-    
     # Define paths to the CSV files
     csv_files = {
         'AMEX': os.path.join('US stock tickers', 'amex_screener.csv'),
@@ -189,11 +168,11 @@ def main():
     
     print(f"\nTotal unique tickers to process: {len(all_tickers)}")
     
-    # Fetch EPS data for the calculated year range
+    # Fetch EPS data for 2013-2022
     print("Starting EPS data collection...")
     start_time = datetime.now()
     
-    results = get_eps_data(all_tickers, years=years)
+    results = get_eps_data(all_tickers, years=range(2013, 2023))
     
     # Add exchange information
     for result in results:
@@ -201,12 +180,12 @@ def main():
     
     # Create DataFrame
     results_df = pd.DataFrame(results)
-    columns = ['Ticker', 'Company_Name', 'Exchange'] + [f'EPS_{year}' for year in years]
+    columns = ['Ticker', 'Company_Name', 'Exchange'] + [f'EPS_{year}' for year in range(2013, 2023)]
     results_df = results_df[columns]
     
     # Calculate summary statistics
     total_tickers = len(results_df)
-    eps_columns = [f'EPS_{year}' for year in years]
+    eps_columns = [f'EPS_{year}' for year in range(2013, 2023)]
     tickers_with_gaps = 0
     tickers_with_no_data = 0
     
@@ -225,13 +204,13 @@ def main():
     }
     summary_df = pd.DataFrame(summary_data)
     
-    # Create Results folder with target year name
+    # Create Results folder if it doesn't exist
     results_folder = 'Results'
     if not os.path.exists(results_folder):
         os.makedirs(results_folder)
     
-    # Save to Excel in Results folder with target year as filename
-    excel_filename = os.path.join(results_folder, f'{target_year}.xlsx')
+    # Save to Excel in Results folder
+    excel_filename = os.path.join(results_folder, '2022.xlsx')
     with pd.ExcelWriter(excel_filename, engine='openpyxl') as writer:
         results_df.to_excel(writer, sheet_name='All_Stocks_EPS', index=False)
         summary_df.to_excel(writer, sheet_name='Summary', index=False)
@@ -255,13 +234,13 @@ def main():
     
     # Print data quality summary
     print("\nData Quality Summary:")
-    print(f"Tickers with complete data ({start_year}-{target_year}): {total_tickers - tickers_with_gaps - tickers_with_no_data}")
+    print(f"Tickers with complete data (2013-2022): {total_tickers - tickers_with_gaps - tickers_with_no_data}")
     print(f"Tickers with partial data: {tickers_with_gaps}")
     print(f"Tickers with no EPS data: {tickers_with_no_data}")
     
     # Show yearly data availability
     print("\nYearly Data Availability:")
-    for year in years:
+    for year in range(2013, 2023):
         available_count = len(results_df[results_df[f'EPS_{year}'].notna()])
         print(f"  {year}: {available_count}/{total_tickers} tickers ({available_count/total_tickers*100:.1f}%)")
 

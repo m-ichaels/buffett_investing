@@ -2,7 +2,6 @@ import subprocess
 import sys
 
 # List of scripts to run in order
-year = 2021
 
 scripts = [
     'step1a.py',
